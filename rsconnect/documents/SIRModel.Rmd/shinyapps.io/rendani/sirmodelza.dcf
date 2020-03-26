@@ -1,0 +1,13 @@
+name: sirmodelza
+title: SIRModelZA
+username:
+account: rendani
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 1992854
+bundleId: 2922308
+url: https://rendani.shinyapps.io/sirmodelza/
+when: 1585139086.88582
+asMultiple: TRUE
+asStatic: FALSE
+ignoredFiles: total_cases.csv|total_cases_per_mil.csv|total_cases_per_mil_test_adj.csv|total_cases_per_mil_test_adj_expand.csv|poputlation.csv|COVID-19_ZAR_2.Rmd|COVID-19_ZAR.Rmd|other.Rmd

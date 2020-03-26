@@ -1,0 +1,104 @@
+---
+title: "test"
+author: "Rendani Mbuvha"
+date: "3/24/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+##Exponential Growth
+
+```{r}
+world_exp= lm(log(y)~time,data = world_data) 
+china_exp= lm(log(y)~time, data = china_data) 
+italy_exp= lm(log(y)~time, data = italy_data) 
+iran_exp= lm(log(y)~time, data = iran_data) 
+south_korea_exp= lm(log(y)~time, data = sk_data) 
+south_africa_exp= lm(log(y)~time, data = sa_data) 
+```
+
+##Goodness of Fit
+with an R_squared of 0.98 this model also not bad
+
+```{r}
+plot(sa_data$time,sa_data$y*population[5,2]/1000000,,pch=19)
+lines(sa_data$time,exp(predict(south_africa_exp,sa_data))*population[5,2]/1000000,col="red")
+summary(south_africa_exp)
+```
+###Making Predictions Based On Other Countries(Exponential)
+```{r}
+world_exp_predictions = as.data.frame(exp(predict(world_exp,sa_future))*population[5,2]/1000000)
+world_exp_predictions[1:19,]=sa_data$y*population[5,2]/1000000
+china_exp_predictions= as.data.frame(exp(predict(china_exp,sa_future))*population[5,2]/1000000)
+china_exp_predictions[1:19,]=sa_data$y*population[5,2]/1000000
+italy_exp_predictions= as.data.frame(exp(predict(italy_exp,sa_future))*population[5,2]/1000000)
+italy_exp_predictions[1:19,]=sa_data$y*population[5,2]/1000000
+south_korea_exp_predictions=as.data.frame(exp(predict(south_africa_exp,sa_future))*population[5,2]/1000000)
+south_korea_exp_predictions[1:19,]=sa_data$y*population[5,2]/1000000
+south_africa_exp_predictions=as.data.frame(exp(predict(south_africa_exp,sa_future))*population[5,2]/1000000)
+iran_exp_predictions = as.data.frame(exp(predict(iran_exp,sa_future))*population[5,2]/1000000)
+iran_exp_predictions[1:19,]=sa_data$y*population[5,2]/1000000
+```
+```{r}
+colnames(iran_exp_predictions)="forecast"
+colnames(south_africa_exp_predictions)="forecast"
+colnames(south_korea_exp_predictions)="forecast"
+colnames(italy_exp_predictions) ="forecast"
+colnames(china_exp_predictions)="forecast"
+colnames(world_exp_predictions)="forecast"
+Trajectory =as.data.frame(c(rep("World",79),rep("China",79),rep("Italy",79),rep("South Korea",79),rep("Iran",79),rep("Current ZA",79)))
+exp_predictions = rbind(as.data.frame(world_exp_predictions),as.data.frame(china_exp_predictions),as.data.frame(italy_exp_predictions),as.data.frame(south_korea_exp_predictions),as.data.frame(iran_exp_predictions),as.data.frame(south_africa_exp_predictions))
+exp_pred_data_frame =cbind(rep(sa_future$ds,6),exp_predictions,Trajectory)
+colnames(exp_pred_data_frame)=c("date","forecast","Trajectory")
+```
+```{r}
+ggplot(exp_pred_data_frame, aes(x = date, y = forecast)) + 
+  geom_line(aes(color = Trajectory), size = 1) +
+    xlab("Date") + ylab("Case Forecast")+
+    ggtitle("What if SA followed Country X: Exponential")+
+  theme_minimal()
+```
+
+###Again..Italy and Iran skew things lets not show them ...
+
+```{r}
+colnames(iran_exp_predictions)="forecast"
+colnames(south_africa_exp_predictions)="forecast"
+colnames(south_korea_exp_predictions)="forecast"
+colnames(italy_exp_predictions) ="forecast"
+colnames(china_exp_predictions)="forecast"
+colnames(world_exp_predictions)="forecast"
+Trajectory =as.data.frame(c(rep("World",79),rep("China",79),rep("Current ZA",79)))
+exp_predictions = rbind(as.data.frame(world_exp_predictions),as.data.frame(china_exp_predictions),as.data.frame(south_africa_exp_predictions))
+exp_pred_data_frame =cbind(rep(sa_future$ds,3),exp_predictions,Trajectory)
+colnames(exp_pred_data_frame)=c("date","forecast","Trajectory")
+```
+```{r}
+ggplot(exp_pred_data_frame, aes(x = date, y = forecast)) + 
+  geom_line(aes(color = Trajectory), size = 1) +
+    xlab("Date") + ylab("Case Forecast")+
+    ggtitle("What if SA followed Country X: Exponential")+
+  theme_minimal()
+```

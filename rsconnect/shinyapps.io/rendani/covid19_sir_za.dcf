@@ -1,0 +1,13 @@
+name: covid19_sir_za
+title: covid19_SIR_ZA
+username:
+account: rendani
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 1992452
+bundleId: 2921826
+url: https://rendani.shinyapps.io/covid19_sir_za/
+when: 1585129826.6629
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: COVID-19_ZAR_2.Rmd|COVID-19_ZAR.html|COVID-19_ZAR.Rmd|Data.xls|new_cases.csv|other.Rmd|poputlation.csv|total_cases_per_mil_test_adj_expand.csv|total_cases_per_mil_test_adj.csv|total_cases_per_mil.csv|total_cases.csv

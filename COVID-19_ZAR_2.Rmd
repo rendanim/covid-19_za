@@ -1,0 +1,228 @@
+---
+title: "Possible COVID-19 Infection Trajectories in South Africa"
+author: "Rendani Mbuvha, Tshilidzi Marwala"
+date: "3/24/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+This notebook aims to provide some initial high-level forecasting of the progression of COVID-19 in South Africa by drawing lessons from progression in other countries. **At the moment given the sparse data, the aim is not forecasting precision but scenario mapping.**
+
+Essentially, this notebook tries to use simple curve fitting methods to answer the questions: What would happen in the next 60 days if South Africa's COVID-19 infections followed the infection trajectory of:
+
+* China
+* Italy
+* South Korea
+* Iran
+* The "World" (global average) 
+
+Another question we try to answer is what if we use Facebook's [Prophet](https://facebook.github.io/prophet/) model to forecast South Africa's trajectory.  
+
+The key takeaway is that the Chinese trajectory is the best possible case --Italy, Iran and (even) South Korea would be nightmare scenarios for us.
+
+**Note to reader** - All models are fitted on cases per million and then scaled up to SA's population at the end.
+
+
+
+##Loading the relevent libraries
+```{r echo = FALSE}
+library(prophet)
+library(ggplot2)
+library(reshape2)
+```
+
+##Reading in the Data
+The data included in this analysis is upto and including the 24th of March 2020
+
+
+
+```{r}
+total_cases = read.csv("total_cases.csv")
+total_cases_per_mil = read.csv("total_cases_per_mil.csv")
+total_cases_per_mil_adj = read.csv("total_cases_per_mil_test_adj.csv")
+total_cases_per_mil_adj_expand = read.csv("total_cases_per_mil_test_adj_expand.csv")
+population = read.csv("poputlation.csv")
+index = seq(1,85)
+total_cases_per_mil_adj =cbind(total_cases_per_mil_adj,index)
+```
+##Initial High-level Plots
+```{r}
+total_cases_per_mil_adj_expand$date = as.Date(total_cases_per_mil_adj_expand$date, format = "%d/%m/%Y")
+ggplot(total_cases_per_mil_adj_expand[1:680,], aes(x = date, y = Confirmed_Cases)) + 
+  geom_line(aes(color = Country), size = 1) +
+    xlab("Date") + ylab("Cases Per Million")+
+  ggtitle("Confirmed Cases Per Million by Country")+
+  theme_minimal()
+```
+
+Observations
+
+* Italy has huge problems
+* China and South Korea have managed to flatten the curve
+* Iran seems to be working hard on this
+* UK should be worried but... they test more than the average!
+* SA(and the 'World') looks okay for now -- We did adjust for lower testing in SA(this seems to increase cases by about 2% *i.e if SA was testing similar to global average*).
+
+```{r include = FALSE}
+sa_data = total_cases_per_mil_adj[67:85,c("South.Africa","date")]
+sk_data= total_cases_per_mil_adj[21:85,c("South.Korea","date")]
+iran_data=total_cases_per_mil[52:85,c("Iran","date")]
+china_data=total_cases_per_mil_adj[1:85,c("China","date")]
+italy_data=total_cases_per_mil[32:85,c("Italy","date")]
+world_data=total_cases_per_mil_adj[1:85,c("World","date")]
+
+
+names(sa_data)[2] = "ds"
+names(sk_data)[2] = "ds"
+names(iran_data)[2] = "ds"
+names(italy_data)[2] = "ds"
+names(world_data)[2] = "ds"
+names(china_data)[2] =  "ds"
+
+names(sa_data)[1] = "y"
+names(sk_data)[1] = "y"
+names(iran_data)[1] = "y"
+names(italy_data)[1] = "y"
+names(world_data)[1] = "y"
+names(china_data)[1] =  "y"
+
+sa_data$ds = as.Date(sa_data$ds , format = "%d/%m/%Y")
+sk_data$ds = as.Date(sk_data$ds, format = "%d/%m/%Y")
+iran_data$ds = as.Date(iran_data$ds, format = "%d/%m/%Y")
+italy_data$ds = as.Date(italy_data$ds, format = "%d/%m/%Y")
+world_data$ds = as.Date(world_data$ds, format = "%d/%m/%Y")
+china_data$ds = as.Date(china_data$ds, format = "%d/%m/%Y")
+
+sa_data_2 = sa_data
+sa_data_2$y = log(sa_data_2$)
+```
+##Facebook Prophet time series forecasting model on South African Data
+
+These model seems to require more data or perhaps a saturation point to be predefined. Perhaps we must return next month(more data)??
+
+```{r echo = FALSE}
+
+sa_model = prophet(sa_data,n.changepoints=3)
+```
+
+Create future periods for South Africa i.e next 60 days
+```{r echo = FALSE}
+sa_future = make_future_dataframe(sa_model, periods = 60)
+
+```
+Make Predictions for South Africa
+```{r}
+sa_forecast = predict(sa_model , sa_future)
+tail(sa_forecast[c('ds', 'yhat', 'yhat_lower', 'yhat_upper')])
+
+```
+
+###Plot South Africa's Forecasts(still at per million level)
+
+```{r}
+plot(sa_model, sa_forecast)
+```
+
+Look at some of the forecast components
+
+```{r}
+prophet_plot_components(sa_model
+                        , sa_forecast)
+```
+```{r}
+sa_future$time <- seq.int(nrow(sa_future))
+sa_data$time <- seq.int(nrow(sa_data))
+sk_data$time <- seq.int(nrow(sk_data))
+iran_data$time <- seq.int(nrow(iran_data))
+china_data$time <- seq.int(nrow(china_data))
+italy_data$time <- seq.int(nrow(italy_data))
+world_data$time <- seq.int(nrow(world_data))
+```
+##Curve Fitting
+###Second-order polynomial
+```{r}
+
+world_2o= lm(y~poly(time-1,2,raw=TRUE),data = world_data) 
+china_2o= lm(y~poly(time-1,2,raw=TRUE), data = china_data) 
+italy_2o= lm(y~poly(time-1,2,raw=TRUE), data = italy_data) 
+iran_2o= lm(y~poly(time-1,2,raw=TRUE), data = iran_data) 
+south_korea_2o= lm(y~poly(time-1,2,raw=TRUE), data = sk_data) 
+south_africa_2o= lm(y~poly(time-1,2,raw=TRUE), data = sa_data) 
+```
+###Goodness of Fit
+with an R_squared of 0.97 this model is not bad i.e caputure 97% of variance in the current data
+```{r}
+plot(sa_data$time,sa_data$y,pch=19)
+lines(sa_data$time,predict(south_africa_2o,sa_data),col="red")
+summary(south_africa_2o)
+```
+###Making Predictions Based On Other Countries(second-order polynomial)
+
+```{r include = FALSE}
+world_2o_predictions = as.data.frame((predict(world_2o,sa_future))*population[5,2]/1000000)
+world_2o_predictions[1:19,]=sa_data$y*population[5,2]/1000000
+china_2o_predictions= as.data.frame((predict(china_2o,sa_future))*population[5,2]/1000000)
+china_2o_predictions[1:19,]=sa_data$y*population[5,2]/1000000
+italy_2o_predictions= as.data.frame((predict(italy_2o,sa_future))*population[5,2]/1000000)
+italy_2o_predictions[1:19,]=sa_data$y*population[5,2]/1000000
+south_korea_2o_predictions=as.data.frame((predict(south_africa_2o,sa_future))*population[5,2]/1000000)
+south_korea_2o_predictions[1:19,]=sa_data$y*population[5,2]/1000000
+south_africa_2o_predictions=as.data.frame((predict(south_africa_2o,sa_future))*population[5,2]/1000000)
+iran_2o_predictions = as.data.frame((predict(iran_2o,sa_future))*population[5,2]/1000000)
+iran_2o_predictions[1:19,]=sa_data$y*population[5,2]/1000000
+```
+```{r include = FALSE}
+colnames(iran_2o_predictions)="forecast"
+colnames(south_africa_2o_predictions)="forecast"
+colnames(south_korea_2o_predictions)="forecast"
+colnames(italy_2o_predictions) ="forecast"
+colnames(china_2o_predictions)="forecast"
+colnames(world_2o_predictions)="forecast"
+Trajectory =as.data.frame(c(rep("World",79),rep("China",79),rep("Italy",79),rep("South Korea",79),rep("Iran",79),rep("Current ZA",79)))
+o2_predictions = rbind(as.data.frame(world_2o_predictions),as.data.frame(china_2o_predictions),as.data.frame(italy_2o_predictions),as.data.frame(south_korea_2o_predictions),as.data.frame(iran_2o_predictions),as.data.frame(south_africa_2o_predictions))
+o2_pred_data_frame =cbind(rep(sa_future$ds,6),o2_predictions,Trajectory)
+colnames(o2_pred_data_frame)=c("date","forecast","Trajectory")
+```
+```{r}
+ggplot(o2_pred_data_frame, aes(x = date, y = forecast)) + 
+  geom_line(aes(color = Trajectory), size = 1) +
+    xlab("Date") + ylab("Case Forecast")+
+    ggtitle("What if SA followed Country X:2nd Order Polynomial")
+  #+geom_hline(yintercept=120000, linetype="dashed", color = "red")
+ #+annotate("text", x = o2_pred_data_frame$date[30], y = 120010, label = "Total National Bed Capacity")
+
+```
+
+##Italy and Iran skew things lets not show them ...
+
+
+```{r include = FALSE}
+#colnames(iran_2o_predictions)="forecast"
+colnames(south_africa_2o_predictions)="forecast"
+colnames(south_korea_2o_predictions)="forecast"
+#colnames(italy_2o_predictions) ="forecast"
+colnames(china_2o_predictions)="forecast"
+colnames(world_2o_predictions)="forecast"
+Trajectory =as.data.frame(c(rep("World",79),rep("China",79),rep("Current ZA",79)))
+o2_predictions = rbind(as.data.frame(world_2o_predictions),as.data.frame(china_2o_predictions),as.data.frame(south_africa_2o_predictions))
+o2_pred_data_frame =cbind(rep(sa_future$ds,3),o2_predictions,Trajectory)
+colnames(o2_pred_data_frame)=c("date","forecast","Trajectory")
+```
+```{r}
+ggplot(o2_pred_data_frame, aes(x = date, y = forecast)) + 
+  geom_line(aes(color = Trajectory), size = 1) +
+    xlab("Date") + ylab("Case Forecast")+
+  ggtitle("What if SA followed Country X:2nd Order Polynomial")+
+  theme_minimal()
+```
+
+
+
+
+
+
+
+
+

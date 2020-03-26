@@ -1,0 +1,10 @@
+name: Publish Document
+title:
+username:
+account: rpubs
+server: rpubs.com
+hostUrl: rpubs.com
+appId: https://api.rpubs.com/api/v1/document/588939/425bc499a28d475d81ff226c89366b81
+bundleId: https://api.rpubs.com/api/v1/document/588939/425bc499a28d475d81ff226c89366b81
+url: http://rpubs.com/rendani/588939
+when: 1585088323.90581
